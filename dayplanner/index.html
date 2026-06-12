@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Nexus Focus</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',sans-serif;background:#050505;color:#f1f5f9;height:100vh;overflow:hidden;-webkit-user-select:none;user-select:none;}
+input,select,button,textarea{font-family:'Inter',sans-serif;}
+::-webkit-scrollbar{width:0;height:0;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+@keyframes ping{0%{transform:scale(1);opacity:.7;}100%{transform:scale(2.2);opacity:0;}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes slideUp{from{opacity:0;transform:translateY(40px);}to{opacity:1;transform:translateY(0);}}
+@keyframes zoomIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
+@keyframes bounceIn{0%{transform:translateY(-20px);opacity:0;}60%{transform:translateY(4px);}100%{transform:translateY(0);opacity:1;}}
+@keyframes spinSlow{from{transform:rotate(0deg);}to{transform:rotate(360deg);}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     LAYOUT SHELL
+════════════════════════════════════════════════════════════════ -->
+<div id="app" style="position:relative;height:100vh;display:flex;flex-direction:column;overflow:hidden;">
+
+  <!-- Background glow blobs -->
+  <div style="position:fixed;inset:0;pointer-events:none;z-index:0;">
+    <div style="position:absolute;top:-10%;right:-10%;width:60%;height:40%;background:rgba(124,58,237,.1);filter:blur(120px);animation:pulse 8s ease-in-out infinite;"></div>
+    <div style="position:absolute;bottom:-10%;left:-10%;width:60%;height:40%;background:rgba(37,99,235,.1);filter:blur(120px);animation:pulse 12s ease-in-out infinite;"></div>
+  </div>
+
+  <!-- Toast notification -->
+  <div id="toast" style="display:none;position:fixed;top:32px;left:50%;transform:translateX(-50%);z-index:200;background:#fff;color:#000;padding:12px 24px;border-radius:20px;font-weight:900;font-size:13px;box-shadow:0 8px 40px rgba(0,0,0,.5);animation:bounceIn .4s ease;white-space:nowrap;"></div>
+
+  <!-- Main scrollable area -->
+  <main id="mainContent" style="flex:1;overflow-y:auto;padding:48px 24px 120px;position:relative;z-index:10;"></main>
+
+  <!-- FAB -->
+  <button onclick="openAddSheet()" style="position:fixed;bottom:112px;right:32px;width:48px;height:48px;background:#fff;color:#000;border:none;border-radius:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 32px rgba(255,255,255,.15);z-index:40;font-size:24px;transition:transform .15s;" onmousedown="this.style.transform='scale(.88)'" onmouseup="this.style.transform='scale(1)'" ontouchstart="this.style.transform='scale(.88)'" ontouchend="this.style.transform='scale(1)'">+</button>
+
+  <!-- Bottom nav -->
+  <nav style="position:fixed;bottom:0;left:0;right:0;height:96px;padding:0 32px 24px;display:flex;align-items:center;justify-content:space-around;z-index:50;background:rgba(10,10,10,.85);backdrop-filter:blur(24px);border-top:1px solid rgba(255,255,255,.05);">
+    <button class="navbtn" data-tab="planner" onclick="switchTab('planner')" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:#7c3aed;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <span style="font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;">Flow</span>
+    </button>
+    <button class="navbtn" data-tab="focus" onclick="switchTab('focus')" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:#475569;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span style="font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;">Focus</span>
+    </button>
+    <button class="navbtn" data-tab="insights" onclick="switchTab('insights')" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:#475569;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span style="font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;">Growth</span>
+    </button>
+    <button class="navbtn" data-tab="health" onclick="switchTab('health')" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:none;cursor:pointer;color:#475569;">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <span style="font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;">Health</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ADD / EDIT MISSION SHEET
+════════════════════════════════════════════════════════════════ -->
+<div id="addSheet" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.65);backdrop-filter:blur(8px);animation:fadeIn .2s ease;">
+  <div onclick="closeAddSheet()" style="flex:1;min-height:60px;"></div>
+  <div style="background:#0f0f0f;border:1px solid rgba(255,255,255,.1);border-radius:48px 48px 0 0;padding:32px 32px 48px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:32px;">
+      <button onclick="closeAddSheet()" style="width:40px;height:40px;background:rgba(255,255,255,.05);border:none;border-radius:50%;color:#94a3b8;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;">‹</button>
+      <div style="width:48px;height:4px;background:rgba(255,255,255,.1);border-radius:4px;"></div>
+      <div style="width:40px;"></div>
+    </div>
+
+    <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.18em;color:#64748b;margin-bottom:8px;padding-left:4px;">Mission Identifier</p>
+    <input id="taskName" placeholder="Mission Name" autocomplete="off" style="width:100%;background:rgba(255,255,255,.05);border:none;border-radius:16px;padding:20px 24px;font-size:20px;font-weight:700;color:#fff;outline:none;margin-bottom:24px;" oninput="this.style.color='#fff'"/>
+
+    <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.18em;color:#64748b;margin-bottom:8px;padding-left:4px;">Mission Date</p>
+    <input id="taskDate" type="date" style="width:100%;background:rgba(255,255,255,.05);border:none;border-radius:16px;padding:16px 24px;font-size:16px;font-weight:700;color:#fff;outline:none;margin-bottom:24px;color-scheme:dark;"/>
+
+    <div id="categoryGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:24px;"></div>
+
+    <div style="background:rgba(255,255,255,.05);border-radius:16px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <svg id="bellIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <p style="font-size:10px;font-weight:900;text-transform:uppercase;color:#e2e8f0;">Timed Alert</p>
+      </div>
+      <button id="alarmToggle" onclick="toggleAlarm()" style="width:48px;height:24px;background:#1e293b;border:none;border-radius:12px;position:relative;cursor:pointer;transition:background .3s;">
+        <div id="alarmThumb" style="position:absolute;top:4px;left:4px;width:16px;height:16px;background:#fff;border-radius:50%;transition:left .3s;"></div>
+      </button>
+    </div>
+
+    <div id="alarmSection" style="display:none;animation:fadeIn .3s ease;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;background:rgba(255,255,255,.05);border-radius:16px;padding:16px;margin-bottom:16px;">
+        <select id="taskHour" style="background:transparent;border:none;color:#fff;font-size:24px;font-weight:700;outline:none;cursor:pointer;"></select>
+        <span style="color:#475569;font-size:20px;font-weight:700;">:</span>
+        <select id="taskMin" style="background:transparent;border:none;color:#fff;font-size:24px;font-weight:700;outline:none;cursor:pointer;"></select>
+        <div style="display:flex;background:rgba(255,255,255,.05);padding:4px;border-radius:8px;margin-left:8px;">
+          <button id="amBtn" onclick="setPeriod('AM')" style="padding:8px 12px;border-radius:6px;border:none;cursor:pointer;font-size:10px;font-weight:900;background:#fff;color:#000;">AM</button>
+          <button id="pmBtn" onclick="setPeriod('PM')" style="padding:8px 12px;border-radius:6px;border:none;cursor:pointer;font-size:10px;font-weight:900;background:transparent;color:#475569;">PM</button>
+        </div>
+      </div>
+      <div id="soundPicker" style="margin-bottom:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 8px;margin-bottom:12px;">
+          <span style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.18em;color:#64748b;">Alert Sound</span>
+          <button onclick="toggleSoundPanel()" style="font-size:10px;font-weight:900;text-transform:uppercase;color:#7c3aed;background:none;border:none;cursor:pointer;">Choose</button>
+        </div>
+        <div id="soundDisplay" style="background:rgba(255,255,255,.05);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <span id="soundLabel" style="font-size:10px;font-weight:900;text-transform:uppercase;color:#e2e8f0;">Digital Pulse</span>
+        </div>
+        <div id="soundPanel" style="display:none;margin-top:12px;animation:fadeIn .3s ease;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;" id="soundGrid"></div>
+        </div>
+      </div>
+    </div>
+
+    <button onclick="saveTask()" style="width:100%;background:#7c3aed;color:#fff;border:none;border-radius:16px;padding:20px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.2em;cursor:pointer;box-shadow:0 8px 32px rgba(124,58,237,.3);margin-top:8px;transition:transform .15s,box-shadow .15s;" id="saveBtn" onmousedown="this.style.transform='scale(.97)'" onmouseup="this.style.transform='scale(1)'">Execute Mission</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ALARM OVERLAY
+════════════════════════════════════════════════════════════════ -->
+<div id="alarmOverlay" style="display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.95);backdrop-filter:blur(20px);display:none;flex-direction:column;align-items:center;justify-content:center;padding:40px;text-align:center;animation:fadeIn .3s ease;">
+  <div style="width:96px;height:96px;background:#7c3aed;border-radius:40px;display:flex;align-items:center;justify-content:center;margin-bottom:32px;box-shadow:0 8px 40px rgba(124,58,237,.5);">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation:pulse 1s ease-in-out infinite;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+  </div>
+  <p style="font-size:10px;font-weight:900;letter-spacing:.4em;text-transform:uppercase;color:#7c3aed;margin-bottom:8px;">Ongoing Alert</p>
+  <h2 id="alarmTitle" style="font-size:36px;font-weight:900;color:#fff;margin-bottom:32px;letter-spacing:-.02em;"></h2>
+  <button onclick="completeFromAlarm()" style="width:100%;max-width:320px;background:#10b981;color:#000;border:none;border-radius:16px;padding:20px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.18em;cursor:pointer;margin-bottom:12px;">Complete Mission</button>
+  <button onclick="dismissAlarm()" style="width:100%;max-width:320px;background:rgba(255,255,255,.1);color:#94a3b8;border:none;border-radius:16px;padding:20px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.18em;cursor:pointer;">Dismiss</button>
+</div>
+
+<audio id="alarmAudio"></audio>
+
+<script>
+// ─── DATA STORE ───────────────────────────────────────────────────────────────
+const STATE = {
+  tasks: JSON.parse(localStorage.getItem('nf_tasks')||'[]'),
+  health: JSON.parse(localStorage.getItem('nf_health')||JSON.stringify({steps:0,waterCount:0,lastWaterDate:'',lastPeriodDate:'',cycleLength:28,vitalsLog:[],streak:0,lastActiveDate:'',hiddenDefaults:[]})),
+  customHabits: JSON.parse(localStorage.getItem('nf_habits')||'[]'),
+  activeTab: 'planner',
+  selectedDate: new Date().toISOString().split('T')[0],
+  // form
+  editingId: null,
+  alarmEnabled: false,
+  taskPeriod: 'AM',
+  selectedSoundUrl: 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3',
+  showSoundPanel: false,
+  // timer
+  timerMode: 'focus',
+  sessionType: '25:5',
+  timeLeft: 25*60,
+  timerActive: false,
+  timerInterval: null,
+  // alarm
+  activeAlarm: null,
+  alarmRingTimer: null,
+  // health inputs
+  bsLevel:'', bpSys:'', bpDia:'',
+  // hydration
+  lastHydrationHour: -1,
+  // step tracking
+  trackingSteps: false,
+  lastStepTime: 0,
+  motionHandler: null,
+};
+
+const CATEGORIES = [
+  {id:'work',    label:'Work',   color:'#60a5fa', bg:'rgba(59,130,246,.1)',  bar:'#3b82f6'},
+  {id:'personal',label:'Life',   color:'#fbbf24', bg:'rgba(245,158,11,.1)', bar:'#f59e0b'},
+  {id:'health',  label:'Health', color:'#fb7185', bg:'rgba(244,63,94,.1)',  bar:'#f43f5e'},
+  {id:'focus',   label:'Focus',  color:'#a78bfa', bg:'rgba(139,92,246,.1)', bar:'#8b5cf6'},
+];
+
+const PRIORITIES = [
+  {id:'high',   label:'High',   color:'#ef4444', pill:'rgba(239,68,68,.1)',  pillText:'#f87171'},
+  {id:'medium', label:'Medium', color:'#f59e0b', pill:'rgba(245,158,11,.1)', pillText:'#fbbf24'},
+  {id:'low',    label:'Low',    color:'#10b981', pill:'rgba(16,185,129,.1)', pillText:'#34d399'},
+];
+
+const SOUNDS = [
+  {id:'digital',label:'Digital Pulse',url:'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'},
+  {id:'zen',    label:'Zen Bowl',     url:'https://assets.mixkit.co/active_storage/sfx/1077/1077-preview.mp3'},
+  {id:'nature', label:'Forest Birds', url:'https://assets.mixkit.co/active_storage/sfx/1110/1110-preview.mp3'},
+  {id:'tech',   label:'Tech Alert',   url:'https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3'},
+];
+
+const QUICK_MISSIONS = [
+  {id:'qm1',name:'Daily Exercise', category:'health', priority:'high'},
+  {id:'qm2',name:'Read 15 Pages',  category:'personal',priority:'medium'},
+  {id:'qm3',name:'Deep Work (1hr)',category:'work',   priority:'high'},
+  {id:'qm4',name:'Meditate',       category:'focus',  priority:'medium'},
+  {id:'qm5',name:'Drink Water',    category:'health', priority:'low'},
+];
+
+const MOTIVATION = [
+  "Win the day.","Focus on the step in front of you.",
+  "Consistency is the bridge.","Small disciplines repeat daily.",
+  "Protect your energy.","Execution over excuses.","Command your morning."
+];
+
+// ─── PERSIST ──────────────────────────────────────────────────────────────────
+function save(){
+  localStorage.setItem('nf_tasks',   JSON.stringify(STATE.tasks));
+  localStorage.setItem('nf_health',  JSON.stringify(STATE.health));
+  localStorage.setItem('nf_habits',  JSON.stringify(STATE.customHabits));
+}
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+let toastTimer = null;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = 'bounceIn .4s ease';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>{ el.style.display='none'; }, 3000);
+}
+
+// ─── CONFETTI ─────────────────────────────────────────────────────────────────
+function spawnConfetti(el){
+  if(!el) return;
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top  + rect.height/2;
+  const colors = ['#7c3aed','#06b6d4','#f59e0b','#10b981','#f43f5e'];
+  for(let i=0;i<20;i++){
+    const dot = document.createElement('div');
+    const angle = Math.random()*2*Math.PI;
+    const dist  = 40+Math.random()*60;
+    Object.assign(dot.style,{
+      position:'fixed',left:cx+'px',top:cy+'px',width:'6px',height:'6px',
+      borderRadius:'50%',background:colors[Math.floor(Math.random()*colors.length)],
+      pointerEvents:'none',zIndex:'9999',transform:'translate(-50%,-50%)',
+      transition:'transform .6s cubic-bezier(.17,.67,.36,1.1), opacity .6s ease',
+    });
+    document.body.appendChild(dot);
+    requestAnimationFrame(()=>{
+      dot.style.transform=`translate(calc(-50% + ${Math.cos(angle)*dist}px), calc(-50% + ${Math.sin(angle)*dist}px)) scale(0)`;
+      dot.style.opacity='0';
+    });
+    setTimeout(()=>dot.remove(),700);
+  }
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+
+function fmt12(t24){
+  if(!t24) return '';
+  const [h,m] = t24.split(':');
+  const hh = parseInt(h);
+  return `${hh%12||12}:${m} ${hh>=12?'PM':'AM'}`;
+}
+
+function getCat(id){ return CATEGORIES.find(c=>c.id===id)||CATEGORIES[0]; }
+function getPri(id){ return PRIORITIES.find(p=>p.id===id)||PRIORITIES[1]; }
+
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+
+function getGreeting(){
+  const h = new Date().getHours();
+  if(h>=5&&h<12) return 'Good Morning';
+  if(h>=12&&h<17) return 'Good Afternoon';
+  return 'Good Evening';
+}
+
+function getCycleStatus(){
+  if(!STATE.health.lastPeriodDate) return {text:'No data logged',color:'#64748b',date:'--'};
+  const last = new Date(STATE.health.lastPeriodDate);
+  const exp = new Date(last);
+  exp.setDate(exp.getDate()+(Number(STATE.health.cycleLength)||28));
+  const today = new Date(); today.setHours(0,0,0,0);
+  const diff = Math.ceil((exp-today)/(1000*60*60*24));
+  const fd = exp.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  if(diff>0)  return {text:`Upcoming in ${diff} days`,  color:'#60a5fa',date:fd};
+  if(diff===0)return {text:'Expected Today',            color:'#fbbf24',date:fd};
+  return      {text:`Late by ${Math.abs(diff)} days`,  color:'#f87171',date:fd};
+}
+
+function circleOffset(pct, r=130){
+  const circ = 2*Math.PI*r;
+  return circ*(1-Math.min(pct,1));
+}
+
+// ─── TAB SWITCH ───────────────────────────────────────────────────────────────
+function switchTab(tab){
+  STATE.activeTab = tab;
+  document.querySelectorAll('.navbtn').forEach(b=>{
+    b.style.color = b.dataset.tab===tab ? '#7c3aed' : '#475569';
+  });
+  render();
+}
+
+// ─── DATE SELECTION ───────────────────────────────────────────────────────────
+function selectDate(ds){
+  STATE.selectedDate = ds;
+  render();
+}
+
+// ─── TASK CRUD ────────────────────────────────────────────────────────────────
+function saveTask(){
+  const name = document.getElementById('taskName').value.trim();
+  const date = document.getElementById('taskDate').value;
+  if(!name||!date){ toast('Enter a mission name and date.'); return; }
+
+  const h12  = document.getElementById('taskHour').value;
+  const min  = document.getElementById('taskMin').value;
+  const time = STATE.alarmEnabled ? to24(h12,min,STATE.taskPeriod) : null;
+
+  const data = {
+    name, date,
+    category: STATE._formCategory||'work',
+    priority:  STATE._formPriority||'medium',
+    time,
+    alarmEnabled: STATE.alarmEnabled,
+    alarmSound:   STATE.selectedSoundUrl,
+    updatedAt: Date.now(),
+  };
+
+  if(STATE.editingId){
+    const idx = STATE.tasks.findIndex(t=>t.id===STATE.editingId);
+    if(idx>-1) STATE.tasks[idx] = {...STATE.tasks[idx],...data};
+    toast('Mission updated.');
+  } else {
+    STATE.tasks.push({id:uid(),completed:false,alarmTriggered:false,createdAt:Date.now(),...data});
+    toast('Mission locked.');
+  }
+  save(); closeAddSheet(); render();
+}
+
+function toggleTask(id, btn){
+  const t = STATE.tasks.find(t=>t.id===id);
+  if(!t) return;
+  t.completed = !t.completed;
+  if(t.completed){
+    spawnConfetti(btn);
+    updateStreak();
+  }
+  save(); render();
+}
+
+function deleteTask(id){
+  STATE.tasks = STATE.tasks.filter(t=>t.id!==id);
+  save(); toast('Mission aborted.'); render();
+}
+
+function addQuickMission(qm){
+  STATE.tasks.push({
+    id:uid(), name:qm.name, category:qm.category, priority:qm.priority||'medium',
+    date:STATE.selectedDate, time:null, alarmEnabled:false,
+    alarmSound:SOUNDS[0].url, completed:false, alarmTriggered:false,
+    createdAt:Date.now(), updatedAt:Date.now()
+  });
+  save(); toast(`+ ${qm.name} added!`); render();
+}
+
+function hideDefaultHabit(id){
+  if(!STATE.health.hiddenDefaults) STATE.health.hiddenDefaults=[];
+  STATE.health.hiddenDefaults.push(id);
+  save(); render();
+}
+
+function deleteCustomHabit(id){
+  STATE.customHabits = STATE.customHabits.filter(h=>h.id!==id);
+  save(); toast('Habit removed.'); render();
+}
+
+function updateStreak(){
+  const today = todayStr();
+  const last = STATE.health.lastActiveDate;
+  let streak = STATE.health.streak||0;
+  if(last!==today){
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate()-1);
+    const yd = yesterday.toISOString().split('T')[0];
+    streak = last===yd ? streak+1 : 1;
+    STATE.health.streak = streak;
+    STATE.health.lastActiveDate = today;
+    save();
+  }
+}
+
+// ─── ADD SHEET ────────────────────────────────────────────────────────────────
+function openAddSheet(task){
+  STATE.editingId = task ? task.id : null;
+  document.getElementById('taskName').value = task ? task.name : '';
+  document.getElementById('taskDate').value = task ? task.date : STATE.selectedDate;
+  STATE._formCategory = task ? task.category : 'work';
+  STATE._formPriority  = task ? task.priority  : 'medium';
+  STATE.alarmEnabled   = task ? task.alarmEnabled : false;
+  STATE.selectedSoundUrl = task?.alarmSound || SOUNDS[0].url;
+
+  if(task?.time){
+    const [h24,mn] = task.time.split(':');
+    const hh = parseInt(h24);
+    STATE.taskPeriod = hh>=12?'PM':'AM';
+    document.getElementById('taskHour').value = (hh%12||12).toString();
+    document.getElementById('taskMin').value = mn;
+  } else {
+    document.getElementById('taskHour').value = '12';
+    document.getElementById('taskMin').value = '00';
+    STATE.taskPeriod = 'AM';
+  }
+
+  renderSheetUI();
+  document.getElementById('addSheet').style.display = 'flex';
+  document.getElementById('addSheet').style.flexDirection = 'column';
+  document.getElementById('addSheet').style.justifyContent = 'flex-end';
+  setTimeout(()=>document.getElementById('taskName').focus(),200);
+}
+
+function closeAddSheet(){
+  document.getElementById('addSheet').style.display = 'none';
+  STATE.editingId = null;
+  STATE.showSoundPanel = false;
+}
+
+function renderSheetUI(){
+  // Category grid
+  const cg = document.getElementById('categoryGrid');
+  cg.innerHTML = CATEGORIES.map(c=>`
+    <button onclick="setFormCat('${c.id}')" id="catBtn_${c.id}" style="
+      display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 6px;
+      border-radius:16px;border:2px solid ${STATE._formCategory===c.id?'rgba(255,255,255,.2)':'transparent'};
+      background:${STATE._formCategory===c.id?'rgba(255,255,255,.1)':'transparent'};
+      cursor:pointer;transition:all .2s;
+      color:${STATE._formCategory===c.id?c.color:'#475569'};
+      font-size:8px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;
+    ">
+      ${catIcon(c.id)}
+      ${c.label}
+    </button>
+  `).join('');
+
+  // Alarm state
+  applyAlarmState();
+
+  // Hour/min selectors
+  const hourSel = document.getElementById('taskHour');
+  if(!hourSel.options.length){
+    for(let i=1;i<=12;i++) hourSel.add(new Option(String(i).padStart(2,'0'),i));
+  }
+  const minSel = document.getElementById('taskMin');
+  if(!minSel.options.length){
+    for(let i=0;i<60;i++) minSel.add(new Option(String(i).padStart(2,'0'),String(i).padStart(2,'0')));
+  }
+
+  // Period buttons
+  document.getElementById('amBtn').style.background = STATE.taskPeriod==='AM'?'#fff':'transparent';
+  document.getElementById('amBtn').style.color = STATE.taskPeriod==='AM'?'#000':'#475569';
+  document.getElementById('pmBtn').style.background = STATE.taskPeriod==='PM'?'#fff':'transparent';
+  document.getElementById('pmBtn').style.color = STATE.taskPeriod==='PM'?'#000':'#475569';
+
+  // Sound grid
+  const sg = document.getElementById('soundGrid');
+  sg.innerHTML = SOUNDS.map(s=>`
+    <button onclick="selectSound('${s.url}','${s.label}')" style="
+      padding:12px;border-radius:12px;font-size:10px;font-weight:900;
+      text-transform:uppercase;letter-spacing:.08em;cursor:pointer;
+      display:flex;align-items:center;justify-content:space-between;
+      transition:all .2s;
+      background:${STATE.selectedSoundUrl===s.url?'#7c3aed':'rgba(255,255,255,.05)'};
+      border:none;
+      color:${STATE.selectedSoundUrl===s.url?'#fff':'#64748b'};
+    ">${s.label} ♪</button>
+  `).join('');
+
+  document.getElementById('saveBtn').textContent = STATE.editingId ? 'Update Mission' : 'Execute Mission';
+  document.getElementById('soundPanel').style.display = STATE.showSoundPanel ? 'block' : 'none';
+}
+
+function catIcon(id){
+  const icons = {
+    work:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+    personal:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+    health:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>',
+    focus:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  };
+  return icons[id]||icons.work;
+}
+
+function setFormCat(id){
+  STATE._formCategory = id;
+  document.querySelectorAll('[id^="catBtn_"]').forEach(b=>{
+    const c = getCat(b.id.replace('catBtn_',''));
+    const active = b.id === 'catBtn_'+id;
+    b.style.border = `2px solid ${active?'rgba(255,255,255,.2)':'transparent'}`;
+    b.style.background = active?'rgba(255,255,255,.1)':'transparent';
+    b.style.color = active?c.color:'#475569';
+  });
+}
+
+function toggleAlarm(){
+  STATE.alarmEnabled = !STATE.alarmEnabled;
+  if(STATE.alarmEnabled && 'Notification' in window && Notification.permission==='default'){
+    Notification.requestPermission();
+  }
+  applyAlarmState();
+}
+
+function applyAlarmState(){
+  const tog = document.getElementById('alarmToggle');
+  const thumb = document.getElementById('alarmThumb');
+  const bell = document.getElementById('bellIcon');
+  const sec = document.getElementById('alarmSection');
+  tog.style.background = STATE.alarmEnabled ? '#7c3aed' : '#1e293b';
+  thumb.style.left = STATE.alarmEnabled ? '28px' : '4px';
+  bell.querySelector('path,circle')&&(bell.style.color=STATE.alarmEnabled?'#7c3aed':'#475569');
+  sec.style.display = STATE.alarmEnabled ? 'block' : 'none';
+}
+
+function setPeriod(p){
+  STATE.taskPeriod = p;
+  document.getElementById('amBtn').style.background = p==='AM'?'#fff':'transparent';
+  document.getElementById('amBtn').style.color = p==='AM'?'#000':'#475569';
+  document.getElementById('pmBtn').style.background = p==='PM'?'#fff':'transparent';
+  document.getElementById('pmBtn').style.color = p==='PM'?'#000':'#475569';
+}
+
+function toggleSoundPanel(){
+  STATE.showSoundPanel = !STATE.showSoundPanel;
+  renderSheetUI();
+}
+
+function selectSound(url, label){
+  STATE.selectedSoundUrl = url;
+  document.getElementById('soundLabel').textContent = label;
+  previewSound(url);
+  renderSheetUI();
+}
+
+function previewSound(url){
+  const a = document.getElementById('alarmAudio');
+  a.src = url; a.loop=false;
+  a.play().catch(()=>{});
+  setTimeout(()=>{ if(!STATE.activeAlarm){ a.pause(); a.currentTime=0; } }, 3000);
+}
+
+function to24(h12,min,period){
+  let h = parseInt(h12);
+  if(period==='PM'&&h<12) h+=12;
+  if(period==='AM'&&h===12) h=0;
+  return `${h.toString().padStart(2,'0')}:${min}`;
+}
+
+// ─── ALARM ────────────────────────────────────────────────────────────────────
+function checkAlarms(){
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  const ds = now.toISOString().split('T')[0];
+  STATE.tasks.forEach(t=>{
+    if(t.date===ds&&t.alarmEnabled&&t.time===timeStr&&!t.alarmTriggered&&!t.completed){
+      t.alarmTriggered = true;
+      save();
+      STATE.activeAlarm = t;
+      document.getElementById('alarmTitle').textContent = t.name;
+      const ov = document.getElementById('alarmOverlay');
+      ov.style.display='flex'; ov.style.flexDirection='column';
+      ov.style.alignItems='center'; ov.style.justifyContent='center';
+      const a = document.getElementById('alarmAudio');
+      a.src = t.alarmSound||SOUNDS[0].url; a.loop=true;
+      a.play().catch(()=>{});
+      if('Notification' in window && Notification.permission==='granted'){
+        new Notification('Mission Alert',{body:`Time for: ${t.name}`});
+      }
+      STATE.alarmRingTimer = setTimeout(dismissAlarm,10000);
+    }
+  });
+}
+
+function dismissAlarm(){
+  clearTimeout(STATE.alarmRingTimer);
+  document.getElementById('alarmOverlay').style.display='none';
+  const a = document.getElementById('alarmAudio');
+  a.pause(); a.loop=false; a.currentTime=0;
+  STATE.activeAlarm = null;
+}
+
+function completeFromAlarm(){
+  if(STATE.activeAlarm){
+    const t = STATE.tasks.find(x=>x.id===STATE.activeAlarm.id);
+    if(t){ t.completed=true; save(); render(); }
+  }
+  dismissAlarm();
+}
+
+setInterval(checkAlarms, 5000);
+
+// ─── HYDRATION CHECK ──────────────────────────────────────────────────────────
+setInterval(()=>{
+  const h = new Date().getHours();
+  if(h>=6&&h<=23&&h%2===0&&h!==STATE.lastHydrationHour){
+    STATE.lastHydrationHour = h;
+    const td = todayStr();
+    const cur = STATE.health.lastWaterDate===td?(STATE.health.waterCount||0):0;
+    STATE.health.waterCount = Math.round(cur+333);
+    STATE.health.lastWaterDate = td;
+    save();
+    toast('💧 Time to drink 333 ml of water!');
+    if('Notification' in window && Notification.permission==='granted'){
+      new Notification('Stay Hydrated! 💧',{body:'Time to drink 333 ml of water.'});
+    }
+    if(STATE.activeTab==='health') render();
+  }
+},10000);
+
+// ─── FOCUS TIMER ──────────────────────────────────────────────────────────────
+function startTimer(){
+  STATE.timerActive = !STATE.timerActive;
+  if(STATE.timerActive){
+    if('Notification' in window && Notification.permission==='default') Notification.requestPermission();
+    STATE.timerInterval = setInterval(()=>{
+      STATE.timeLeft--;
+      if(STATE.timeLeft<=0){
+        clearInterval(STATE.timerInterval); STATE.timerActive=false;
+        const finished = STATE.timerMode;
+        STATE.timerMode = finished==='focus'?'break':'focus';
+        const dur = STATE.sessionType==='50:10'?
+          (STATE.timerMode==='focus'?3000:600):
+          (STATE.timerMode==='focus'?1500:300);
+        STATE.timeLeft = dur;
+        toast(`${finished==='focus'?'Focus':'Break'} complete!`);
+        if('Notification' in window && Notification.permission==='granted'){
+          new Notification('Time is up!',{body:`Your ${finished} session is complete.`});
+        }
+      }
+      renderTimerFace();
+    },1000);
+  } else {
+    clearInterval(STATE.timerInterval);
+  }
+  renderTimerFace();
+}
+
+function resetTimer(){
+  clearInterval(STATE.timerInterval); STATE.timerActive=false;
+  const dur = STATE.sessionType==='50:10'?
+    (STATE.timerMode==='focus'?3000:600):
+    (STATE.timerMode==='focus'?1500:300);
+  STATE.timeLeft = dur;
+  renderTimerFace();
+}
+
+function setSession(type){
+  clearInterval(STATE.timerInterval); STATE.timerActive=false;
+  STATE.sessionType=type; STATE.timerMode='focus';
+  STATE.timeLeft = type==='50:10'?3000:1500;
+  renderTimerFace();
+}
+
+function skipSession(){
+  clearInterval(STATE.timerInterval); STATE.timerActive=false;
+  STATE.timerMode = STATE.timerMode==='focus'?'break':'focus';
+  const dur = STATE.sessionType==='50:10'?
+    (STATE.timerMode==='focus'?3000:600):
+    (STATE.timerMode==='focus'?1500:300);
+  STATE.timeLeft = dur;
+  renderTimerFace();
+}
+
+function renderTimerFace(){
+  const el = document.getElementById('timerFace');
+  if(!el) return;
+  const max = STATE.timerMode==='focus'?(STATE.sessionType==='50:10'?3000:1500):(STATE.sessionType==='50:10'?600:300);
+  const pct = STATE.timeLeft/max;
+  const circ = 2*Math.PI*130;
+  const offset = circ*(1-pct);
+  const mins = Math.floor(STATE.timeLeft/60);
+  const secs = (STATE.timeLeft%60).toString().padStart(2,'0');
+  const color = STATE.timerMode==='focus'?'#7c3aed':'#10b981';
+  el.querySelector('#timerCircle').style.strokeDashoffset = offset;
+  el.querySelector('#timerCircle').style.stroke = color;
+  el.querySelector('#timerTime').textContent = `${mins}:${secs}`;
+  el.querySelector('#timerModeLabel').textContent = STATE.timerMode+' mode';
+  const pingEl = el.querySelector('#timerPing');
+  if(pingEl) pingEl.style.display = STATE.timerActive?'block':'none';
+  const playBtn = document.getElementById('timerPlayBtn');
+  if(playBtn){
+    playBtn.style.background = STATE.timerActive?'#fff':'#7c3aed';
+    playBtn.style.color = STATE.timerActive?'#000':'#fff';
+    playBtn.innerHTML = STATE.timerActive
+      ? '<svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+      : '<svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" style="margin-left:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>';
+  }
+  const s25 = document.getElementById('sess25');
+  const s50 = document.getElementById('sess50');
+  if(s25&&s50){
+    s25.style.background = STATE.sessionType==='25:5'?'#7c3aed':'transparent';
+    s25.style.color = STATE.sessionType==='25:5'?'#fff':'#475569';
+    s50.style.background = STATE.sessionType==='50:10'?'#7c3aed':'transparent';
+    s50.style.color = STATE.sessionType==='50:10'?'#fff':'#475569';
+  }
+}
+
+// ─── HEALTH ───────────────────────────────────────────────────────────────────
+function addWater(ml){
+  const td = todayStr();
+  const cur = STATE.health.lastWaterDate===td?(STATE.health.waterCount||0):0;
+  STATE.health.waterCount = Math.max(0,Math.round(cur+ml));
+  STATE.health.lastWaterDate = td;
+  save(); render();
+}
+
+function saveVitals(){
+  const bs = document.getElementById('bsInput')?.value;
+  const sys = document.getElementById('bpSys')?.value;
+  const dia = document.getElementById('bpDia')?.value;
+  if(!bs&&(!sys||!dia)){ toast('Enter at least one reading.'); return; }
+  const entry = {
+    id:Date.now(),
+    date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}),
+    bloodSugar: bs?parseInt(bs):null,
+    systolic: sys?parseInt(sys):null,
+    diastolic: dia?parseInt(dia):null,
+  };
+  if(!STATE.health.vitalsLog) STATE.health.vitalsLog=[];
+  STATE.health.vitalsLog.unshift(entry);
+  STATE.health.vitalsLog = STATE.health.vitalsLog.slice(0,15);
+  if(document.getElementById('bsInput'))  document.getElementById('bsInput').value='';
+  if(document.getElementById('bpSys'))    document.getElementById('bpSys').value='';
+  if(document.getElementById('bpDia'))    document.getElementById('bpDia').value='';
+  save(); toast('Vitals reading saved.'); render();
+}
+
+function resetSteps(){
+  STATE.health.steps=0; save(); render();
+}
+
+function toggleStepTracking(){
+  if(STATE.trackingSteps){
+    if(STATE.motionHandler) window.removeEventListener('devicemotion',STATE.motionHandler);
+    STATE.trackingSteps=false; toast('Live tracking paused.'); render(); return;
+  }
+  const start=()=>{
+    STATE.motionHandler=(ev)=>{
+      let acc=ev.acceleration, thr=2.5;
+      if(!acc||acc.x==null){ acc=ev.accelerationIncludingGravity; thr=12.5; }
+      if(!acc||acc.x==null) return;
+      const mag=Math.sqrt(acc.x**2+acc.y**2+acc.z**2);
+      const now=Date.now();
+      if(mag>thr&&now-STATE.lastStepTime>350){
+        STATE.lastStepTime=now;
+        STATE.health.steps=(STATE.health.steps||0)+1;
+        if(STATE.health.steps%5===0) save();
+        const el=document.getElementById('liveSteps');
+        if(el) el.textContent=(STATE.health.steps||0).toLocaleString();
+      }
+    };
+    window.addEventListener('devicemotion',STATE.motionHandler);
+    STATE.trackingSteps=true; toast('Live tracking active!'); render();
+  };
+  if(typeof DeviceMotionEvent!=='undefined'&&typeof DeviceMotionEvent.requestPermission==='function'){
+    DeviceMotionEvent.requestPermission().then(p=>{ if(p==='granted') start(); else toast('Motion access denied.'); }).catch(()=>toast('Permission error.'));
+  } else { start(); }
+}
+
+function setLastPeriod(offset){
+  const d=new Date(); d.setDate(d.getDate()+offset);
+  STATE.health.lastPeriodDate=d.toISOString().split('T')[0];
+  save(); render();
+}
+
+// ─── MAIN RENDER ──────────────────────────────────────────────────────────────
+function render(){
+  const mc = document.getElementById('mainContent');
+  const today = todayStr();
+  const allTodayTasks = STATE.tasks.filter(t=>t.date===today);
+  const progress = allTodayTasks.length ? Math.round(allTodayTasks.filter(t=>t.completed).length/allTodayTasks.length*100) : 0;
+  const quote = MOTIVATION[new Date().getDay()%MOTIVATION.length];
+
+  // Calendar strip (common header for planner+health)
+  const calendarDays = Array.from({length:7},(_,i)=>{
+    const d=new Date(); d.setDate(d.getDate()+i-1); return d;
+  });
+  const calHtml = (STATE.activeTab==='planner'||STATE.activeTab==='health') ? `
+    <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;margin-bottom:32px;">
+      ${calendarDays.map(d=>{
+        const ds=d.toISOString().split('T')[0];
+        const sel=ds===STATE.selectedDate;
+        return `<button onclick="selectDate('${ds}')" style="
+          flex-shrink:0;width:56px;padding:16px 0;border-radius:24px;border:none;cursor:pointer;
+          display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .2s;
+          background:${sel?'#7c3aed':'rgba(255,255,255,.05)'};
+          color:${sel?'#fff':'#475569'};
+        ">
+          <span style="font-size:9px;font-weight:900;text-transform:uppercase;">${d.toLocaleDateString('en-US',{weekday:'short'}).slice(0,2)}</span>
+          <span style="font-size:18px;font-weight:900;">${d.getDate()}</span>
+        </button>`;
+      }).join('')}
+    </div>
+  ` : '';
+
+  // Header
+  const header = `
+    <header style="margin-bottom:32px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;">
+        <div style="display:flex;align-items:center;gap:16px;">
+          <div style="width:48px;height:48px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:16px;display:flex;align-items:center;justify-content:center;">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <div>
+            <h1 style="font-size:22px;font-weight:900;background:linear-gradient(135deg,#fff,#94a3b8);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${getGreeting()}</h1>
+            <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;margin-top:4px;">"${quote}"</p>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+          <div style="display:flex;align-items:center;gap:6px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);padding:6px 12px;border-radius:20px;">
+            <span style="font-size:12px;animation:pulse 1s infinite;">🔥</span>
+            <span style="font-size:10px;font-weight:900;color:#fb923c;text-transform:uppercase;">${STATE.health.streak||0} Day Streak</span>
+          </div>
+          <p style="font-size:9px;font-weight:700;color:#334155;text-transform:uppercase;letter-spacing:.12em;">${new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'})}</p>
+        </div>
+      </div>
+      ${calHtml}
+    </header>
+  `;
+
+  // Tab content
+  let content = '';
+
+  if(STATE.activeTab==='planner'){
+    const filteredTasks = STATE.tasks.filter(t=>t.date===STATE.selectedDate).sort((a,b)=>a.createdAt-b.createdAt);
+    const circ = 2*Math.PI*34;
+    const offset = circ*(1-progress/100);
+
+    const visibleDefaults = QUICK_MISSIONS.filter(qm=>!(STATE.health.hiddenDefaults||[]).includes(qm.id));
+    const allQuick = [...visibleDefaults, ...STATE.customHabits];
+
+    content = `
+      <div style="animation:slideUp .4s ease;">
+        <!-- Progress ring -->
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);border-radius:40px;padding:24px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+          <div>
+            <p style="font-size:10px;font-weight:900;color:#475569;text-transform:uppercase;letter-spacing:.15em;margin-bottom:4px;">Productivity</p>
+            <p style="font-size:30px;font-weight:900;">${progress}%</p>
+          </div>
+          <svg width="80" height="80" style="transform:rotate(-90deg);">
+            <circle cx="40" cy="40" r="34" stroke="rgba(255,255,255,.05)" stroke-width="6" fill="transparent"/>
+            <circle cx="40" cy="40" r="34" stroke="#7c3aed" stroke-width="6" fill="transparent"
+              stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
+              style="transition:stroke-dashoffset 1s;"/>
+          </svg>
+        </div>
+
+        <!-- Quick habits -->
+        <h3 style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.3em;color:#475569;padding:0 8px;margin-bottom:12px;">Quick Add Habits</h3>
+        <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none;margin-bottom:24px;">
+          ${allQuick.map(qm=>{
+            const cat=getCat(qm.category);
+            const isCustom = !QUICK_MISSIONS.some(d=>d.id===qm.id);
+            return `
+              <div style="flex-shrink:0;display:flex;align-items:stretch;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);border-radius:12px;overflow:hidden;">
+                <button onclick="addQuickMission(${JSON.stringify(qm).replace(/"/g,'&quot;')})" style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:none;border:none;cursor:pointer;color:#cbd5e1;font-size:12px;font-weight:700;" onmouseenter="this.style.background='rgba(255,255,255,.08)'" onmouseleave="this.style.background='none'">
+                  <span style="color:${cat.color};font-size:14px;">●</span>
+                  <span style="white-space:nowrap;">${qm.name}</span>
+                  <span style="color:#475569;font-size:14px;">+</span>
+                </button>
+                <button onclick="${isCustom?`deleteCustomHabit('${qm.id}')`:`hideDefaultHabit('${qm.id}')`}" style="padding:0 12px;background:transparent;border:none;border-left:1px solid rgba(255,255,255,.05);cursor:pointer;color:#475569;font-size:12px;" onmouseenter="this.style.color='#f87171';this.style.background='rgba(239,68,68,.1)'" onmouseleave="this.style.color='#475569';this.style.background='transparent'">🗑</button>
+              </div>
+            `;
+          }).join('')}
+          <button onclick="openAddHabitModal()" style="flex-shrink:0;display:flex;align-items:center;gap:4px;padding:10px 16px;background:rgba(124,58,237,.2);border:1px solid rgba(124,58,237,.3);border-radius:12px;color:#a78bfa;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">+ New Habit</button>
+        </div>
+
+        <!-- Missions list -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:0 8px;margin-bottom:12px;">
+          <h3 style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.3em;color:#475569;">Missions</h3>
+          <span style="font-size:10px;font-weight:700;color:#334155;">${filteredTasks.length} Planned</span>
+        </div>
+
+        ${filteredTasks.length===0?`
+          <div style="padding:80px 0;text-align:center;border:2px dashed rgba(255,255,255,.05);border-radius:40px;">
+            <div style="font-size:32px;margin-bottom:16px;opacity:.2;">✦</div>
+            <p style="color:#475569;font-size:14px;font-style:italic;">Clear schedule for today.</p>
+          </div>
+        `:`
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            ${filteredTasks.map(task=>{
+              const cat=getCat(task.category);
+              const pri=getPri(task.priority);
+              return `
+                <div style="display:flex;align-items:center;gap:16px;padding:20px;border-radius:32px;border:1px solid ${task.completed?'rgba(16,185,129,.1)':'rgba(255,255,255,.05)'};background:${task.completed?'rgba(16,185,129,.05)':'rgba(255,255,255,.05)'};transition:all .3s;">
+                  <button onclick="toggleTask('${task.id}',this)" style="flex-shrink:0;background:none;border:none;cursor:pointer;color:${task.completed?'#10b981':'#334155'};font-size:24px;padding:0;line-height:1;">
+                    ${task.completed?'✔':'○'}
+                  </button>
+                  <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+                      <span style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:${cat.color};">${cat.label}</span>
+                    </div>
+                    <p style="font-size:16px;font-weight:700;color:${task.completed?'#475569':'#fff'};text-decoration:${task.completed?'line-through':'none'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${task.name}</p>
+                    <div style="display:flex;align-items:center;gap:12px;margin-top:4px;">
+                      ${task.time?`<span style="font-size:10px;font-weight:700;color:#475569;">⏰ ${fmt12(task.time)}</span>`:''}
+                      <span style="font-size:8px;font-weight:900;text-transform:uppercase;padding:3px 8px;border-radius:10px;background:${pri.pill};color:${pri.pillText};">${pri.label}</span>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:4px;">
+                    <button onclick="openAddSheet(STATE.tasks.find(t=>t.id==='${task.id}'))" style="padding:8px;background:none;border:none;cursor:pointer;color:#a78bfa;font-size:16px;">✎</button>
+                    <button onclick="deleteTask('${task.id}')" style="padding:8px;background:none;border:none;cursor:pointer;color:rgba(239,68,68,.4);font-size:16px;" onmouseenter="this.style.color='#ef4444'" onmouseleave="this.style.color='rgba(239,68,68,.4)'">🗑</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `}
+      </div>
+    `;
+  }
+
+  else if(STATE.activeTab==='focus'){
+    const max = STATE.timerMode==='focus'?(STATE.sessionType==='50:10'?3000:1500):(STATE.sessionType==='50:10'?600:300);
+    const pct = STATE.timeLeft/max;
+    const circ = 2*Math.PI*130;
+    const offset = circ*(1-pct);
+    const mins = Math.floor(STATE.timeLeft/60);
+    const secs = (STATE.timeLeft%60).toString().padStart(2,'0');
+    const modeColor = STATE.timerMode==='focus'?'#7c3aed':'#10b981';
+
+    content = `
+      <div id="timerFace" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:70vh;gap:40px;animation:zoomIn .4s ease;">
+        <!-- Session toggle -->
+        <div style="display:flex;background:rgba(255,255,255,.05);padding:4px;border-radius:12px;gap:4px;">
+          <button id="sess25" onclick="setSession('25:5')" style="padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:10px;font-weight:900;transition:all .2s;background:${STATE.sessionType==='25:5'?'#7c3aed':'transparent'};color:${STATE.sessionType==='25:5'?'#fff':'#475569'};">25:5</button>
+          <button id="sess50" onclick="setSession('50:10')" style="padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:10px;font-weight:900;transition:all .2s;background:${STATE.sessionType==='50:10'?'#7c3aed':'transparent'};color:${STATE.sessionType==='50:10'?'#fff':'#475569'};">50:10</button>
+        </div>
+
+        <!-- Timer ring -->
+        <div style="position:relative;width:288px;height:288px;">
+          ${STATE.timerActive?`<div id="timerPing" style="position:absolute;inset:0;border-radius:50%;border:4px solid rgba(124,58,237,.3);animation:ping 3s linear infinite;"></div>`:''}
+          <svg viewBox="0 0 288 288" style="width:100%;height:100%;transform:rotate(-90deg);">
+            <circle cx="144" cy="144" r="130" stroke="rgba(255,255,255,.05)" stroke-width="8" fill="transparent"/>
+            <circle id="timerCircle" cx="144" cy="144" r="130" stroke="${modeColor}" stroke-width="8" fill="transparent"
+              stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
+              style="transition:stroke-dashoffset 1s linear;"/>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <span id="timerModeLabel" style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.4em;color:#475569;margin-bottom:8px;">${STATE.timerMode} mode</span>
+            <span id="timerTime" style="font-size:64px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-.02em;">${mins}:${secs}</span>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div style="display:flex;align-items:center;gap:24px;">
+          <button onclick="resetTimer()" style="width:56px;height:56px;background:rgba(255,255,255,.05);border:none;border-radius:16px;cursor:pointer;color:#94a3b8;font-size:20px;display:flex;align-items:center;justify-content:center;">↺</button>
+          <button id="timerPlayBtn" onclick="startTimer()" style="width:96px;height:96px;border-radius:40px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;background:${STATE.timerActive?'#fff':'#7c3aed'};color:${STATE.timerActive?'#000':'#fff'};">
+            ${STATE.timerActive
+              ? '<svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>'
+              : '<svg width="40" height="40" viewBox="0 0 24 24" fill="currentColor" style="margin-left:4px;"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
+            }
+          </button>
+          <button onclick="skipSession()" style="width:56px;height:56px;background:rgba(255,255,255,.05);border:none;border-radius:16px;cursor:pointer;color:#94a3b8;font-size:20px;display:flex;align-items:center;justify-content:center;">☕</button>
+        </div>
+      </div>
+    `;
+  }
+
+  else if(STATE.activeTab==='insights'){
+    const cats = CATEGORIES.map(cat=>{
+      const count = STATE.tasks.filter(t=>t.category===cat.id).length;
+      const pct = STATE.tasks.length ? Math.round(count/STATE.tasks.length*100) : 0;
+      return {cat,count,pct};
+    });
+    content = `
+      <div style="display:flex;flex-direction:column;gap:32px;animation:fadeIn .4s ease;">
+        <div style="padding:40px 32px;background:linear-gradient(135deg,rgba(124,58,237,.1),transparent);border:1px solid rgba(255,255,255,.05);border-radius:48px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:16px;">📊</div>
+          <h3 style="font-size:24px;font-weight:900;margin-bottom:8px;">Growth Tracker</h3>
+          <p style="color:#475569;font-size:14px;font-style:italic;">Consistency is the bridge between goals and accomplishment.</p>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);border-radius:40px;padding:32px;">
+          <h4 style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.3em;color:#475569;margin-bottom:24px;">Category Split</h4>
+          <div style="display:flex;flex-direction:column;gap:24px;">
+            ${cats.map(({cat,pct})=>`
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span style="font-size:12px;font-weight:700;color:#fff;display:flex;align-items:center;gap:8px;">
+                    <span style="width:12px;height:12px;border-radius:50%;background:${cat.bar};display:inline-block;"></span>
+                    ${cat.label}
+                  </span>
+                  <span style="font-size:10px;font-weight:900;color:#475569;">${pct}%</span>
+                </div>
+                <div style="width:100%;height:8px;background:rgba(255,255,255,.05);border-radius:4px;overflow:hidden;">
+                  <div style="height:100%;background:${cat.bar};width:${pct}%;border-radius:4px;transition:width 1s ease;"></div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);border-radius:40px;padding:32px;display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div style="background:rgba(0,0,0,.3);border-radius:24px;padding:20px;text-align:center;">
+            <p style="font-size:28px;font-weight:900;color:#7c3aed;">${STATE.tasks.length}</p>
+            <p style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;margin-top:4px;">Total Missions</p>
+          </div>
+          <div style="background:rgba(0,0,0,.3);border-radius:24px;padding:20px;text-align:center;">
+            <p style="font-size:28px;font-weight:900;color:#10b981;">${STATE.tasks.filter(t=>t.completed).length}</p>
+            <p style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;margin-top:4px;">Completed</p>
+          </div>
+          <div style="background:rgba(0,0,0,.3);border-radius:24px;padding:20px;text-align:center;">
+            <p style="font-size:28px;font-weight:900;color:#f59e0b;">${STATE.health.streak||0}</p>
+            <p style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;margin-top:4px;">Day Streak</p>
+          </div>
+          <div style="background:rgba(0,0,0,.3);border-radius:24px;padding:20px;text-align:center;">
+            <p style="font-size:28px;font-weight:900;color:#f43f5e;">${progress}%</p>
+            <p style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;margin-top:4px;">Today's Rate</p>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  else if(STATE.activeTab==='health'){
+    const td = todayStr();
+    const waterToday = STATE.health.lastWaterDate===td?(STATE.health.waterCount||0):0;
+    const waterPct = Math.min(waterToday/3000,1);
+    const waterOffset = circleOffset(waterPct,40);
+    const stepsTotal = STATE.health.steps||0;
+    const stepsPct = Math.min(stepsTotal/10000,1);
+    const stepsOffset = circleOffset(stepsPct,40);
+    const cycle = getCycleStatus();
+    const vitalsLog = STATE.health.vitalsLog||[];
+
+    content = `
+      <div style="display:flex;flex-direction:column;gap:24px;animation:slideUp .4s ease;">
+
+        <!-- Steps -->
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);border-radius:40px;padding:24px;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:16px;right:16px;font-size:100px;opacity:.05;pointer-events:none;">👣</div>
+          <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.3em;color:#475569;margin-bottom:24px;">🏃 Footsteps Monitor</p>
+          <div style="display:flex;align-items:center;gap:24px;margin-bottom:24px;">
+            <svg width="96" height="96" style="flex-shrink:0;transform:rotate(-90deg);">
+              <circle cx="48" cy="48" r="40" stroke="rgba(255,255,255,.05)" stroke-width="8" fill="transparent"/>
+              <circle cx="48" cy="48" r="40" stroke="#10b981" stroke-width="8" fill="transparent"
+                stroke-dasharray="${2*Math.PI*40}" stroke-dashoffset="${stepsOffset}" stroke-linecap="round" style="transition:stroke-dashoffset 1s;"/>
+            </svg>
+            <div>
+              <p id="liveSteps" style="font-size:36px;font-weight:900;color:#fff;">${stepsTotal.toLocaleString()}</p>
+              <p style="font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;margin-top:4px;">/ 10,000 Goal</p>
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;">
+            <button onclick="toggleStepTracking()" style="flex:1;padding:16px;border-radius:16px;border:none;cursor:pointer;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;transition:all .3s;background:${STATE.trackingSteps?'rgba(16,185,129,.2)':'#10b981'};color:${STATE.trackingSteps?'#34d399':'#000'};${STATE.trackingSteps?'border:1px solid rgba(16,185,129,.3);animation:pulse 2s infinite;':''}">
+              ${STATE.trackingSteps?'● Tracking Active':'▶ Start Live Tracking'}
+            </button>
+            <button onclick="resetSteps()" style="padding:16px 24px;background:rgba(255,255,255,.05);border:none;border-radius:16px;cursor:pointer;font-size:10px;font-weight:900;text-transform:uppercase;color:#94a3b8;">Reset</button>
+          </div>
+        </div>
+
+        <!-- Hydration -->
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);border-radius:40px;padding:24px;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:16px;right:16px;font-size:100px;opacity:.05;pointer-events:none;">💧</div>
+          <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.3em;color:#475569;margin-bottom:24px;">💧 Hydration Monitor</p>
+          <div style="display:flex;align-items:center;gap:24px;margin-bottom:24px;">
+            <svg width="96" height="96" style="flex-shrink:0;transform:rotate(-90deg);">
+              <circle cx="48" cy="48" r="40" stroke="rgba(255,255,255,.05)" stroke-width="8" fill="transparent"/>
+              <circle cx="48" cy="48" r="40" stroke="#06b6d4" stroke-width="8" fill="transparent"
+                stroke-dasharray="${2*Math.PI*40}" stroke-dashoffset="${waterOffset}" stroke-linecap="round" style="transition:stroke-dashoffset 1s;"/>
+            </svg>
+            <div>
+              <p style="font-size:36px;font-weight:900;color:#fff;">${Math.round(waterToday)}<span style="font-size:18px;">ml</span></p>
+              <p style="font-size:10px;font-weight:700;color:#475569;text-transform:uppercase;margin-top:4px;">/ 3 Liters Goal</p>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <button onclick="addWater(333)" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.1);border-radius:16px;padding:12px;color:#22d3ee;font-size:12px;font-weight:700;cursor:pointer;">+333 ml</button>
+            <button onclick="addWater(-333)" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:12px;color:#94a3b8;font-size:12px;font-weight:700;cursor:pointer;">-333 ml</button>
+          </div>
+        </div>
+
+        <!-- Cycle Tracker -->
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);border-radius:40px;padding:24px;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:16px;right:16px;font-size:100px;opacity:.05;pointer-events:none;">🌸</div>
+          <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.3em;color:#475569;margin-bottom:24px;">🌸 Cycle Tracker</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+            <div>
+              <label style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;display:block;margin-bottom:8px;padding-left:4px;">Last Period</label>
+              <input type="date" value="${STATE.health.lastPeriodDate||''}" onchange="STATE.health.lastPeriodDate=this.value;save();render();"
+                style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:12px 16px;font-size:14px;font-weight:700;color:#fff;outline:none;color-scheme:dark;"/>
+              <div style="display:flex;gap:4px;margin-top:8px;">
+                <button onclick="setLastPeriod(0)" style="flex:1;background:rgba(255,255,255,.05);border:none;border-radius:8px;padding:6px;font-size:9px;font-weight:700;color:#94a3b8;cursor:pointer;">Today</button>
+                <button onclick="setLastPeriod(-1)" style="flex:1;background:rgba(255,255,255,.05);border:none;border-radius:8px;padding:6px;font-size:9px;font-weight:700;color:#94a3b8;cursor:pointer;">-1 Day</button>
+                <button onclick="setLastPeriod(-2)" style="flex:1;background:rgba(255,255,255,.05);border:none;border-radius:8px;padding:6px;font-size:9px;font-weight:700;color:#94a3b8;cursor:pointer;">-2 Days</button>
+              </div>
+            </div>
+            <div>
+              <label style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;display:block;margin-bottom:8px;padding-left:4px;">Cycle Length (Days)</label>
+              <input type="number" value="${STATE.health.cycleLength||28}" min="20" max="45" onchange="STATE.health.cycleLength=parseInt(this.value)||28;save();render();"
+                style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:12px 16px;font-size:14px;font-weight:700;color:#fff;outline:none;"/>
+            </div>
+          </div>
+          <div style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.05);border-radius:24px;padding:20px;text-align:center;">
+            <p style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;margin-bottom:4px;">Expected Next Date</p>
+            <p style="font-size:20px;font-weight:900;color:#fff;margin-bottom:8px;">${cycle.date}</p>
+            <span style="font-size:12px;font-weight:700;padding:6px 16px;border-radius:20px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);color:${cycle.color};">${cycle.text}</span>
+          </div>
+        </div>
+
+        <!-- Vitals Monitor -->
+        <div style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);border-radius:40px;padding:24px;position:relative;overflow:hidden;">
+          <div style="position:absolute;top:16px;right:16px;font-size:100px;opacity:.05;pointer-events:none;">❤️</div>
+          <p style="font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.3em;color:#475569;margin-bottom:24px;">❤️ Vitals Monitor</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div>
+              <label style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;display:block;margin-bottom:8px;padding-left:4px;">Blood Sugar</label>
+              <input id="bsInput" type="number" placeholder="mg/dL"
+                style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:12px 16px;font-size:14px;font-weight:700;color:#fff;outline:none;"/>
+            </div>
+            <div>
+              <label style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;display:block;margin-bottom:8px;padding-left:4px;">Blood Pressure</label>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <input id="bpSys" type="number" placeholder="SYS"
+                  style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:12px 8px;font-size:14px;font-weight:700;color:#fff;outline:none;text-align:center;"/>
+                <span style="color:#475569;font-weight:900;">/</span>
+                <input id="bpDia" type="number" placeholder="DIA"
+                  style="width:100%;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:12px 8px;font-size:14px;font-weight:700;color:#fff;outline:none;text-align:center;"/>
+              </div>
+            </div>
+          </div>
+          <button onclick="saveVitals()" style="width:100%;padding:16px;background:rgba(255,255,255,.05);border:none;border-radius:16px;cursor:pointer;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#e2e8f0;margin-bottom:24px;transition:background .2s;" onmouseenter="this.style.background='rgba(255,255,255,.1)'" onmouseleave="this.style.background='rgba(255,255,255,.05)'">Log Reading</button>
+
+          <h4 style="font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#475569;margin-bottom:12px;padding-left:4px;">Recent History</h4>
+          ${vitalsLog.length===0?`
+            <p style="text-align:center;font-size:10px;font-weight:700;color:#334155;padding:16px;border:1px dashed rgba(255,255,255,.05);border-radius:16px;">No readings logged yet.</p>
+          `:`
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              ${vitalsLog.slice(0,5).map((log,i,arr)=>{
+                const prevBs = arr.slice(i+1).find(l=>l.bloodSugar);
+                const prevBp = arr.slice(i+1).find(l=>l.systolic);
+                const bsTrend = log.bloodSugar&&prevBs ? (log.bloodSugar>prevBs.bloodSugar?'↑':'↓') : '';
+                const bpTrend = log.systolic&&prevBp ? (log.systolic>prevBp.systolic?'↑':'↓') : '';
+                return `
+                  <div style="background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:12px;display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:9px;font-weight:700;color:#475569;width:64px;line-height:1.3;">${log.date}</span>
+                    <div style="display:flex;gap:16px;">
+                      ${log.bloodSugar?`<span style="font-size:12px;font-weight:900;color:#fff;">🩸 ${log.bloodSugar} <span style="color:${bsTrend==='↑'?'#fb923c':'#34d399'}">${bsTrend}</span></span>`:''}
+                      ${log.systolic&&log.diastolic?`<span style="font-size:12px;font-weight:900;color:#fff;">💓 ${log.systolic}/${log.diastolic} <span style="color:${bpTrend==='↑'?'#fb923c':'#34d399'}">${bpTrend}</span></span>`:''}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+
+      </div>
+    `;
+  }
+
+  mc.innerHTML = header + content;
+}
+
+// ─── ADD HABIT MODAL ──────────────────────────────────────────────────────────
+function openAddHabitModal(){
+  const modal = document.createElement('div');
+  modal.id = 'habitModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:110;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);animation:fadeIn .2s ease;';
+  modal.innerHTML = `
+    <div style="background:#0f0f0f;border:1px solid rgba(255,255,255,.1);border-radius:32px;padding:24px;width:100%;max-width:360px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+        <h3 style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;color:#e2e8f0;">Create Custom Habit</h3>
+        <button onclick="document.getElementById('habitModal').remove()" style="background:none;border:none;color:#475569;cursor:pointer;font-size:20px;">✕</button>
+      </div>
+      <input id="habitName" placeholder="Habit Name (e.g. Yoga)" autofocus
+        style="width:100%;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 20px;font-size:16px;font-weight:700;color:#fff;outline:none;margin-bottom:16px;font-family:'Inter',sans-serif;"/>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;" id="habitCatGrid">
+        ${CATEGORIES.map(c=>`
+          <button onclick="setHabitCat('${c.id}')" id="hc_${c.id}" style="
+            display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;
+            border-radius:12px;border:1px solid rgba(255,255,255,.05);
+            background:transparent;cursor:pointer;font-size:10px;font-weight:900;
+            text-transform:uppercase;color:#475569;transition:all .2s;
+          ">${c.label}</button>
+        `).join('')}
+      </div>
+      <button onclick="submitHabit()" style="width:100%;background:#7c3aed;color:#fff;border:none;border-radius:12px;padding:16px;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.15em;cursor:pointer;">Save Habit</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  STATE._habitCat = 'work';
+  setHabitCat('work');
+  setTimeout(()=>document.getElementById('habitName').focus(),100);
+}
+
+function setHabitCat(id){
+  STATE._habitCat = id;
+  CATEGORIES.forEach(c=>{
+    const b = document.getElementById('hc_'+c.id);
+    if(!b) return;
+    const active = c.id===id;
+    b.style.background = active?'rgba(255,255,255,.1)':'transparent';
+    b.style.borderColor = active?'rgba(255,255,255,.2)':'rgba(255,255,255,.05)';
+    b.style.color = active?c.color:'#475569';
+  });
+}
+
+function submitHabit(){
+  const name = document.getElementById('habitName')?.value.trim();
+  if(!name){ toast('Enter a habit name.'); return; }
+  STATE.customHabits.push({id:uid(),name,category:STATE._habitCat||'work',priority:'medium',createdAt:Date.now()});
+  save();
+  document.getElementById('habitModal')?.remove();
+  toast('Custom habit saved!');
+  render();
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded',()=>{
+  // Init date inputs
+  document.getElementById('taskDate').value = STATE.selectedDate;
+
+  // Init hour/min selectors once
+  const hourSel = document.getElementById('taskHour');
+  for(let i=1;i<=12;i++) hourSel.add(new Option(String(i).padStart(2,'0'),i));
+  const minSel = document.getElementById('taskMin');
+  for(let i=0;i<60;i++) minSel.add(new Option(String(i).padStart(2,'0'),String(i).padStart(2,'0')));
+
+  render();
+});
+</script>
+</body>
+</html>
